@@ -1,0 +1,7 @@
+databaseChangeLog:
+# - include: 
+#    file: db/changelog/liquibase-outputChangeLog.yaml
+ - include: 
+    file: db/changelog/liquibase-dml.sql
+ - include: 
+    file: db/changelog/liquibase-dml2.sql

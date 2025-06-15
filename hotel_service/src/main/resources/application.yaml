@@ -1,0 +1,104 @@
+spring:
+  application:
+    name: hotel
+  datasource:
+    url: jdbc:oracle:thin:@//172.17.0.2:1521/FREE
+    username: hotel
+    password: hotel
+  jpa:
+    show-sql: true
+#    properties:
+#      jakarta:
+#        persistence:
+#          schema-generation:
+#            scripts:
+#              action: create
+#              create-target: create.sql
+#              create-source: metadata
+    database-platform: org.hibernate.dialect.OracleDialect
+    hibernate:
+      ddl-auto: none
+#      ddl-auto: update
+#      ddl-auto: create-drop
+##    defer-datasource-initialization: true
+  jackson:
+    serialization:
+      'FAIL_ON_EMPTY_BEANS': false
+  sql:
+    init:
+      mode: never
+#      mode: always
+  liquibase:
+    enabled: true
+
+
+server:
+  port: 8084
+  
+logging:
+  pattern:
+    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
+
+    
+---
+
+management:
+    tracing:
+       propagation:
+           type: b3
+       enabled: true
+       sampling:
+           probability: 1
+    zipkin:
+       tracing:
+           endpoint: http://localhost:9411/api/v2/spans
+    endpoint:
+       health:
+           show-details: always # resilience health details
+    health:
+           circuitbreakers:
+              enabled: true
+
+# management.endpoints.web.exposure.include: '*'
+
+---
+
+  
+eureka:
+ client:
+    healthcheck:
+      enabled: true
+    service-url:
+      defaultZone: http://eureka:eureka@eureka:8761/eureka
+#      defaultZone: http://eureka:eureka@${eureka.instance.hostname}:8761/eureka/
+ instance:
+#    hostname: localhost 
+    prefer-ip-address: true
+
+---
+
+resilience4j.circuitbreaker:
+  configs:
+    default:
+      registerHealthIndicator: true # resilience health actuator
+      slidingWindowType: COUNT_BASED
+      slidingWindowSize: 10
+      minimumNumberOfCalls: 5
+      permittedNumberOfCallsInHalfOpenState: 3
+      automaticTransitionFromOpenToHalfOpenEnabled: true
+      maxWaitDurationInHalfOpenState: 10s
+      waitDurationInOpenState: 30s
+      failureRateThreshold: 30
+      recordExceptions:
+        - org.springframework.web.client.HttpServerErrorException
+  instances:
+    serv1:
+      baseConfig: default
+
+resilience4j.ratelimiter:
+  instances:
+    limit:
+      limitForPeriod: 5
+      limitRefreshPeriod: 60s
+      timeoutDuration: 10s
+

@@ -1,0 +1,118 @@
+spring:
+  application:
+    name: airport
+  datasource:
+    url: jdbc:oracle:thin:@//172.17.0.2:1521/FREE
+    username: airport
+    password: airport
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+#      ddl-auto: update
+#      ddl-auto: create-drop
+#    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        'generate_statistics': true
+        show_sql: true
+        format_sql: true
+  jackson:
+    serialization:
+      'FAIL_ON_EMPTY_BEANS': false
+  sql:
+    init:
+      mode: never
+#      mode: always
+  liquibase:
+    enabled: true
+    
+server:
+  port: 8083
+  
+logging:
+  pattern:
+    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
+    
+---
+
+
+
+
+management:
+    tracing:
+       enabled: true
+       propagation:
+           type: b3
+       sampling:
+           probability: 1
+    zipkin:
+       tracing:
+           endpoint: http://localhost:9411/api/v2/spans
+    endpoint:
+       health:
+           show-details: always # resilience health details
+    health:
+           circuitbreakers:
+              enabled: true
+
+management.endpoints.web.exposure.include: '*'
+management.tracing.enabled: true
+
+# management.endpoints.web.exposure.include: '*'
+
+---
+
+  
+eureka:
+ client:
+    healthcheck:
+      enabled: true
+    service-url:
+      defaultZone: http://eureka:eureka@eureka:8761/eureka
+#      defaultZone: http://eureka:eureka@${eureka.instance.hostname}:8761/eureka/
+ instance:
+#    hostname: localhost 
+    prefer-ip-address: true
+
+---
+
+resilience4j.circuitbreaker:
+  configs:
+    default:
+#      slidingWindowType: COUNT_BASED
+#      slidingWindowSize: 10
+#      minimumNumberOfCalls: 5
+#      permittedNumberOfCallsInHalfOpenState: 10
+#      waitDurationInOpenState: 10
+#      failureRateThreshold: 60
+      registerHealthIndicator: true # resilience health actuator
+      slidingWindowType: COUNT_BASED
+      slidingWindowSize: 10
+      minimumNumberOfCalls: 5
+      permittedNumberOfCallsInHalfOpenState: 3
+      automaticTransitionFromOpenToHalfOpenEnabled: true
+      maxWaitDurationInHalfOpenState: 10s
+      waitDurationInOpenState: 30s
+      failureRateThreshold: 30
+#      eventConsumerBufferSize: 10
+      recordExceptions:
+        - org.springframework.web.client.HttpServerErrorException
+  instances:
+    serv1:
+      baseConfig: default
+
+resilience4j.ratelimiter:
+  instances:
+    limit:
+      limitForPeriod: 5
+      limitRefreshPeriod: 60s
+      timeoutDuration: 10s
+
+resilience4j.retry:
+  instances:
+    rtr:
+      maxAttempts: 3
+      waitDuration: 5s
+      retryExceptions:
+        - org.springframework.web.client.HttpServerErrorException

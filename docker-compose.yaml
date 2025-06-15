@@ -1,0 +1,107 @@
+services:
+  builder_travel_agency:
+    build: .
+    networks:
+      - spring-boot
+  zipkin:
+    hostname: zipkin
+    image: openzipkin/zipkin
+    networks:
+      - spring-boot
+    ports:
+      - 9411:9411
+    depends_on:
+      - builder_travel_agency
+  oracle23db:
+    hostname: oracle23
+    image: gvenzl/oracle-free
+    volumes:
+      - /home/joca/oracle_datafiles:/opt/oracle/oradata
+    networks:
+      - spring-boot
+    ports:
+      - 1521:1521
+    depends_on:
+      - builder_travel_agency
+  eureka:
+    hostname: eureka
+    build: ./eureka_server_travel_agency
+    ports:
+      - 8761:8761
+    networks:
+      - spring-boot
+    depends_on:
+      - zipkin
+    healthcheck:
+        test: ["CMD", "curl", "http://eureka:eureka@eureka:8761/actuator/health"]
+        interval: 10s # How often the status will be checked
+        retries: 5 # How many times to check before considering it unavailable
+        start_period: 10s # How long after startup to begin checks
+        timeout: 10s # Timeout for each test run
+  gateway:
+    hostname: gateway
+    build: ./gateway_travel_agency
+    ports:
+      - 8081:8081
+    networks:
+      - spring-boot 
+    depends_on:
+      eureka:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:eureka@eureka:8761/eureka/
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+  travel_agency_service:
+    hostname: travel_agency
+    build: ./travel_agency_service
+    ports:
+      - 8082:8082
+    networks:
+      - spring-boot 
+    depends_on:
+      - gateway
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:eureka@eureka:8761/eureka/
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle23:1521/FREE
+  travel_agency_service-2:
+    hostname: travel_agency_2
+    image: travel_service-travel_agency_service
+    ports:
+      - 8085:8082
+    networks:
+      - spring-boot 
+    depends_on:
+      - travel_agency_service
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:eureka@eureka:8761/eureka/
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle23:1521/FREE
+  hotel_service:
+    hostname: hotel
+    build: ./hotel_service
+    ports:
+      - 8084:8084
+    networks:
+      - spring-boot 
+    depends_on:
+      - gateway
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:eureka@eureka:8761/eureka/
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle23:1521/FREE
+  airport_service:
+    hostname: airport
+    build: ./airport_service
+    ports:
+      - 8083:8083
+    networks:
+      - spring-boot 
+    depends_on:
+      - gateway
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:eureka@eureka:8761/eureka/
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle23:1521/FREE
+networks:
+  spring-boot:

@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: travel-agency
+  datasource:
+    url: jdbc:oracle:thin:@//172.17.0.3:1521/FREE
+    username: travelagency
+    password: travelagency
+  jpa:
+    show-sql: true
+#    properties:
+#      jakarta:
+#        persistence:
+#          schema-generation:
+#            scripts:
+#              action: create
+#              create-target: create.sql
+#              create-source: metadata
+    hibernate:
+      ddl-auto: none
+#      ddl-auto: update
+#      ddl-auto: create-drop
+#    defer-datasource-initialization: true
+  jackson:
+    serialization:
+      'FAIL_ON_EMPTY_BEANS': false
+  sql:
+    init:
+      mode: never
+#      mode: always
+  liquibase:
+    enabled: true
+    
+url: "lb://AIRPORT"
+
+server:
+  port: 8082
+  
+logging:
+  pattern:
+    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
+    
+---
+
+management:
+    tracing:
+       propagation:
+#          consume: [b3, w3c]
+#          produce: [b3, w3c]
+          type: b3
+       sampling:
+           probability: 1
+    zipkin:
+       tracing:
+           endpoint: http://localhost:9411/api/v2/spans
+
+
+management.endpoints.web.exposure.include: '*'
+management.tracing.enabled: true
+
+---
+
+  
+eureka:
+ client:
+    #register-with-eureka: false
+    healthcheck:
+      enabled: true
+    service-url:
+      defaultZone: http://eureka:eureka@localhost:8761/eureka
+#      defaultZone: http://eureka:eureka@${eureka.instance.hostname}:8761/eureka/
+ instance:
+#    hostname: localhost 
+    prefer-ip-address: true
+
+---
