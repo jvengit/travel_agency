@@ -66,7 +66,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle23:1521/FREE
   travel_agency_service-2:
     hostname: travel_agency_2
-    image: travel_service-travel_agency_service
+    build: ./travel_agency_service
     ports:
       - 8085:8082
     networks:
