@@ -34,7 +34,7 @@ docker stop oracle23ai
 ```
 ## Clone the project.
 
-	git clone https://github.com/jvengit/travel_agency.git
+	git clone https://github.com/jvengit/travel_service.git
 
 
 ## Run the project.
