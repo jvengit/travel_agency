@@ -61,6 +61,5 @@ curl localhost:8081/flight/stopmcemit
 curl http://localhost:8082/actuator/metrics | jq .
 
 ```
-# Usefull links:
 
 
