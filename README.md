@@ -41,7 +41,7 @@ docker stop oracle23ai
 
 Before running the project, change VOLUME location for oracle23db service in docker-compose.yaml file to the one set up previously.
 
-Change working directory to the project (travel_agency) and run the command:
+Change working directory to the project (travel_service) and run the command:
 
 ```
 docker compose up
